@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Koleksi Video</title>
+  <style>
+    body{font-family:system-ui,sans-serif;margin:0;padding:16px;background:#111;color:#eee}
+    h1{margin:0 0 12px}
+    #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+    .card{background:#1c1c1c;border-radius:8px;overflow:hidden}
+    .card video{width:100%;display:block;background:#000;aspect-ratio:9/16;object-fit:contain}
+    .card small{display:block;padding:6px 8px;color:#999}
+    #nav{display:flex;gap:8px;justify-content:center;align-items:center;margin:16px 0}
+    button{padding:8px 14px;border:0;border-radius:6px;background:#333;color:#eee;cursor:pointer}
+    button:disabled{opacity:.4;cursor:default}
+  </style>
+</head>
+<body>
+  <h1>Koleksi Video</h1>
+  <div id="nav"></div>
+  <div id="grid"></div>
+  <div id="nav2"></div>
+
+<script>
+const PER_PAGE = 24;
+let urls = [], page = 1;
+
+async function init() {
+  const txt = await (await fetch('videos.txt')).text();
+  urls = [...new Set(
+    txt.split(/\r?\n/).map(s => s.trim()).filter(s => s.startsWith('http'))
+  )];
+  page = parseInt(location.hash.slice(1)) || 1;
+  render();
+}
+
+function render() {
+  const pages = Math.max(1, Math.ceil(urls.length / PER_PAGE));
+  page = Math.min(Math.max(1, page), pages);
+  location.hash = page;
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  urls.slice((page - 1) * PER_PAGE, page * PER_PAGE).forEach((u, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const v = document.createElement('video');
+    v.controls = true;
+    v.preload = 'none';       // hemat kuota: tidak memuat sebelum diputar
+    v.playsInline = true;
+    v.src = u;
+    const label = document.createElement('small');
+    label.textContent = '#' + ((page - 1) * PER_PAGE + i + 1);
+    card.append(v, label);
+    grid.append(card);
+  });
+
+  const nav = `
+    <button ${page<=1?'disabled':''} onclick="go(-1)">‹ Sebelumnya</button>
+    <span>Halaman ${page} / ${pages} (${urls.length} video)</span>
+    <button ${page>=pages?'disabled':''} onclick="go(1)">Berikutnya ›</button>`;
+  document.getElementById('nav').innerHTML = nav;
+  document.getElementById('nav2').innerHTML = nav;
+  window.scrollTo(0, 0);
+}
+function go(d){ page += d; render(); }
+init();
+</script>
+</body>
+</html>
